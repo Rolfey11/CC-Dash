@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORK.DASH — Consultant Workrate Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#0b0c10;--surface:#12141a;--surface2:#181b23;--surface3:#1e222c;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);
+  --text:#eef0f5;--text2:#8a8f9e;--text3:#50556a;
+  --green:#2dce89;--green-bg:rgba(45,206,137,0.1);
+  --red:#f5365c;--red-bg:rgba(245,54,92,0.1);
+  --amber:#fbb83a;--amber-bg:rgba(251,184,58,0.1);
+  --blue:#5e9cf5;--blue-bg:rgba(94,156,245,0.1);
+  --purple:#a78bfa;--purple-bg:rgba(167,139,250,0.1);
+  --accent:#5e9cf5;
+  --fh:'Syne',sans-serif;--fm:'DM Mono',monospace;
+  --radius:12px;--shadow:0 4px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--fh);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:6px;height:6px;}::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px;}
+nav{position:sticky;top:0;z-index:100;background:rgba(11,12,16,0.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;gap:16px;overflow-x:auto;}
+.nav-brand{font-size:15px;font-weight:700;letter-spacing:.06em;white-space:nowrap;}
+.nav-brand span{color:var(--accent);}
+.nav-tabs{display:flex;gap:2px;}
+.nav-tab{background:none;border:none;color:var(--text3);font-family:var(--fh);font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .15s;letter-spacing:.02em;white-space:nowrap;}
+.nav-tab:hover{color:var(--text2);background:var(--surface2);}
+.nav-tab.active{color:var(--text);background:var(--surface2);box-shadow:inset 0 -2px 0 var(--accent);}
+.nav-date{font-family:var(--fm);font-size:11px;color:var(--text3);white-space:nowrap;}
+.page{display:none;padding:28px;}.page.active{display:block;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.section-title{font-size:20px;font-weight:700;letter-spacing:-.01em;}
+.section-sub{font-size:11px;color:var(--text3);font-family:var(--fm);margin-top:3px;}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s;}
+.kpi-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);}
+.kpi-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.kpi-val{font-size:26px;font-weight:700;font-family:var(--fm);line-height:1;}
+.kpi-val.g{color:var(--green);text-shadow:0 0 20px rgba(45,206,137,.25);}
+.kpi-val.r{color:var(--red);text-shadow:0 0 20px rgba(245,54,92,.25);}
+.kpi-val.a{color:var(--amber);text-shadow:0 0 20px rgba(251,184,58,.25);}
+.kpi-val.b{color:var(--blue);text-shadow:0 0 20px rgba(94,156,245,.25);}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px;font-family:var(--fm);}
+.cards-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.p-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:all .2s;position:relative;overflow:hidden;}
+.p-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:var(--shadow);}
+.p-card.ab{border-top:2px solid var(--green);}
+.p-card.ab::after{content:'';position:absolute;top:0;left:0;right:0;height:40px;background:linear-gradient(180deg,rgba(45,206,137,.05),transparent);pointer-events:none;}
+.p-card.bb{border-top:2px solid var(--red);}
+.p-card.bb::after{content:'';position:absolute;top:0;left:0;right:0;height:40px;background:linear-gradient(180deg,rgba(245,54,92,.05),transparent);pointer-events:none;}
+.p-card.mx{border-top:2px solid var(--amber);}
+.p-card.mx::after{content:'';position:absolute;top:0;left:0;right:0;height:40px;background:linear-gradient(180deg,rgba(251,184,58,.05),transparent);pointer-events:none;}
+.p-name{font-size:13px;font-weight:700;margin-bottom:4px;letter-spacing:.02em;}
+.p-team{font-size:10px;font-family:var(--fm);margin-bottom:8px;}
+.p-score{font-size:22px;font-weight:700;font-family:var(--fm);line-height:1;}
+.p-sub{font-size:11px;color:var(--text2);margin-top:3px;font-family:var(--fm);}
+.bar-bg{height:4px;background:var(--surface3);border-radius:2px;margin:7px 0 9px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+.pdiv{border:none;border-top:1px solid var(--border);margin:9px 0;}
+.p-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.p-lbl{font-size:10px;color:var(--text3);font-family:var(--fm);}
+.p-val{font-size:12px;font-weight:600;font-family:var(--fm);}
+.p-val.g{color:var(--green);}.p-val.r{color:var(--red);}.p-val.a{color:var(--amber);}
+.pills{display:flex;gap:4px;margin-top:9px;flex-wrap:wrap;}
+.pill{font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.05em;text-transform:uppercase;}
+.pg{background:var(--green-bg);color:var(--green);}.pr{background:var(--red-bg);color:var(--red);}.pa{background:var(--amber-bg);color:var(--amber);}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;transition:border-color .2s;}
+.chart-card:hover{border-color:var(--border2);}
+.chart-title{font-size:13px;font-weight:700;margin-bottom:3px;letter-spacing:-.01em;}
+.chart-sub{font-size:11px;color:var(--text3);font-family:var(--fm);margin-bottom:18px;}
+.entry-layout{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start;}
+.sidebar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:sticky;top:76px;}
+.sidebar-title{font-size:13px;font-weight:700;margin-bottom:16px;}
+.field-lbl{font-size:10px;color:var(--text3);font-family:var(--fm);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
+input[type=date],input[type=number],input[type=text],select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--fm);color:var(--text);outline:none;transition:border-color .15s;}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(94,156,245,.08);}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:9px 18px;border-radius:8px;font-family:var(--fh);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;gap:6px;}
+.btn-p{background:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(94,156,245,.3);}.btn-p:hover{background:#4d8ee0;}
+.btn-s{background:var(--surface2);color:var(--text2);border:1px solid var(--border2);}.btn-s:hover{color:var(--text);}
+.btn-d{background:var(--red-bg);color:var(--red);border:1px solid rgba(245,54,92,.2);}.btn-d:hover{background:rgba(245,54,92,.2);}
+.btn-w{width:100%;}
+.entry-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.et-head{display:grid;grid-template-columns:140px 1fr 1fr 1fr 130px;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.th{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;font-family:var(--fm);}
+.et-row{display:grid;grid-template-columns:140px 1fr 1fr 1fr 130px;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);align-items:center;}
+.et-row:last-child{border-bottom:none;}
+.et-name{font-size:13px;font-weight:600;}
+.et-mtd{font-size:11px;color:var(--text3);font-family:var(--fm);line-height:1.6;}
+.lb-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.lb-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;}
+.lb-title{font-size:13px;font-weight:700;margin-bottom:16px;}
+.lb-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.lb-row:last-child{border-bottom:none;}
+.lb-rank{font-size:11px;font-weight:700;color:var(--text3);font-family:var(--fm);width:24px;min-width:24px;}
+.lb-rank.gold{color:#fbb83a;}.lb-rank.silver{color:#9aa5b4;}.lb-rank.bronze{color:#c97d44;}
+.lb-name{font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-bar-bg{flex:2;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;}
+.lb-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),#7eb8ff);}
+.lb-val{font-size:12px;font-weight:700;font-family:var(--fm);white-space:nowrap;}
+.hist-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.hist-head{display:grid;grid-template-columns:90px 130px 80px 90px 80px 80px 70px;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.hist-row{display:grid;grid-template-columns:90px 130px 80px 90px 80px 80px 70px;padding:10px 16px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;font-family:var(--fm);}
+.hist-row:last-child{border-bottom:none;}.hist-row:hover{background:var(--surface2);}
+.del-btn{background:none;border:1px solid var(--border2);color:var(--text3);font-size:11px;font-family:var(--fm);padding:4px 8px;border-radius:5px;cursor:pointer;transition:all .15s;}
+.del-btn:hover{border-color:var(--red);color:var(--red);}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.set-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;}
+.set-title{font-size:13px;font-weight:700;margin-bottom:16px;}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;padding:4px;border-radius:4px;transition:color .15s;}
+.icon-btn:hover{color:var(--red);}
+.empty{text-align:center;padding:48px 24px;color:var(--text3);}
+.empty-icon{font-size:32px;margin-bottom:12px;}
+.toast{position:fixed;bottom:28px;right:28px;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:999;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.toast.show{transform:translateY(0);opacity:1;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:28px;width:400px;max-width:90vw;box-shadow:var(--shadow);}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:20px;}
+.modal-field{margin-bottom:14px;}
+.modal-btns{display:flex;gap:8px;margin-top:20px;justify-content:flex-end;}
+.sub-nav{display:flex;gap:2px;margin-bottom:22px;border-bottom:1px solid var(--border);padding-bottom:0;}
+.sub-tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);font-family:var(--fh);font-size:13px;font-weight:600;padding:8px 16px;cursor:pointer;transition:all .15s;margin-bottom:-1px;}
+.sub-tab:hover{color:var(--text2);}.sub-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.member-toggle{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:var(--surface2);}
+.member-toggle:hover{border-color:var(--border2);}.member-toggle.selected{border-color:var(--accent);background:var(--blue-bg);}
+.member-toggle input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;}
+.dbd-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);margin-bottom:16px;}
+.dbd-table{border-collapse:collapse;font-family:var(--fm);font-size:12px;white-space:nowrap;min-width:100%;}
+.dbd-th{background:var(--surface2);color:var(--text3);font-weight:700;padding:10px 12px;border:1px solid var(--border);text-align:center;font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
+.dbd-th.name-col{text-align:left;min-width:140px;position:sticky;left:0;z-index:2;background:var(--surface2);}
+.dbd-td{padding:8px 12px;border:1px solid var(--border);text-align:center;background:var(--surface);}
+.dbd-td.name-col{text-align:left;font-weight:600;position:sticky;left:0;z-index:1;background:var(--surface);}
+.dbd-td.hol{background:var(--red-bg);color:var(--red);}
+.sum-table{width:100%;border-collapse:collapse;font-family:var(--fm);font-size:12px;}
+.sum-th{background:var(--surface2);color:var(--text3);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:11px 14px;border:1px solid var(--border);text-align:right;}
+.sum-th:first-child{text-align:left;}
+.sum-td{padding:10px 14px;border:1px solid var(--border);text-align:right;background:var(--surface);}
+.sum-td:first-child{text-align:left;font-weight:600;color:var(--text);}
+.sum-tr:hover .sum-td{background:var(--surface2);}
+.hol-th{background:var(--surface2);color:var(--text3);font-weight:600;padding:8px 5px;border:1px solid var(--border);text-align:center;}
+.hol-th.nc{text-align:left;min-width:120px;padding:8px 12px;position:sticky;left:0;z-index:2;background:var(--surface2);}
+.hol-td{padding:4px 3px;border:1px solid var(--border);text-align:center;background:var(--surface);}
+.hol-td.nc{text-align:left;font-weight:600;font-size:12px;color:var(--text);background:var(--surface);padding:6px 12px;position:sticky;left:0;z-index:1;}
+.hol-td.we{background:var(--surface3);}
+.hol-cell{width:24px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;transition:background .1s;margin:0 auto;font-size:10px;font-weight:700;color:var(--text3);}
+.hol-cell:hover{background:var(--surface3);}.hol-cell.on-hol{background:var(--red-bg);color:var(--red);}.hol-cell.on-sick{background:rgba(251,184,58,0.15);color:var(--amber);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.page.active{animation:fadeUp .2s ease;}
+@media(max-width:1400px){.cards-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:1200px){.cards-grid{grid-template-columns:repeat(2,1fr);}.kpi-row{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:900px){.cards-grid{grid-template-columns:1fr 1fr;}.charts-row{grid-template-columns:1fr;}.entry-layout{grid-template-columns:1fr;}.lb-grid{grid-template-columns:1fr;}.settings-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+    <div class="nav-brand">WORK<span>.</span>DASH</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
+      <button class="nav-tab" onclick="showPage('teams')">Teams</button>
+      <button class="nav-tab" onclick="showPage('scorecards')">Scorecards</button>
+      <button class="nav-tab" onclick="showPage('entry')">Daily Entry</button>
+      <button class="nav-tab" onclick="showPage('leaderboard')">Leaderboard</button>
+      <button class="nav-tab" onclick="showPage('history')">History</button>
+      <button class="nav-tab" onclick="showPage('daybyday')">Day by Day</button>
+      <button class="nav-tab" onclick="showPage('holiday')">Holiday</button>
+      <button class="nav-tab" onclick="showPage('manager')">Manager View</button>
+      <button class="nav-tab" onclick="showPage('settings')">Settings</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+      <span style="font-size:10px;font-weight:600;color:var(--text3);font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap">Month</span>
+      <select id="globalMonthSel" onchange="setGlobalMonth()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:5px 10px;font-size:12px;font-family:var(--fm);color:var(--text);outline:none;cursor:pointer;min-width:130px;"></select>
+    </div>
+  </div>
+  <div class="nav-date" id="navDate"></div>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="section-head">
+    <div><div class="section-title">Team Overview</div><div class="section-sub" id="dash-sub"></div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="exportCSV('dashboard')">&#8595; Export CSV</button>
+      <button class="btn btn-s" onclick="showPage('entry')">+ Add today's numbers</button>
+    </div>
+  </div>
+  <div class="kpi-row" id="kpiRow"></div>
+  <div class="cards-grid" id="cardsGrid"></div>
+  <div class="charts-row">
+    <div class="chart-card"><div class="chart-title">Daily live % trend</div><div class="chart-sub">team avg vs 32% target</div><div style="position:relative;height:220px"><canvas id="cDailyLive"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Daily dials</div><div class="chart-sub">team total per day</div><div style="position:relative;height:220px"><canvas id="cDailyDials"></canvas></div></div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-card"><div class="chart-title">Consultant live % vs target</div><div class="chart-sub">MTD average</div><div id="wLiveBar" style="position:relative;height:300px"><canvas id="cLiveBar"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Consultant dials vs target</div><div class="chart-sub">MTD total</div><div id="wDialsBar" style="position:relative;height:300px"><canvas id="cDialsBar"></canvas></div></div>
+  </div>
+</div>
+
+<!-- TEAMS -->
+<div class="page" id="page-teams">
+  <div class="section-head">
+    <div><div class="section-title">Teams</div><div class="section-sub">Split team views</div></div>
+    <button class="btn btn-s" onclick="exportCSV('teams')">&#8595; Export CSV</button>
+  </div>
+  <div class="sub-nav">
+    <button class="sub-tab active" onclick="switchTeamTab('james')">Team James</button>
+    <button class="sub-tab" onclick="switchTeamTab('damo')">Team Damo</button>
+    <button class="sub-tab" onclick="switchTeamTab('g')">Team G</button>
+    <button class="sub-tab" onclick="switchTeamTab('assign')" style="margin-left:auto;color:var(--accent)">&#9881; Assign Members</button>
+  </div>
+  <div id="teamTabContent"></div>
+</div>
+
+<!-- SCORECARDS -->
+<div class="page" id="page-scorecards">
+  <div class="section-head">
+    <div><div class="section-title">Consultant Scorecards</div><div class="section-sub">Targets: 32% live &middot; 100 dials/day &middot; 3:00 talk/day</div></div>
+    <select id="scMonth" onchange="renderScorecards()" style="width:160px"></select>
+  </div>
+  <div id="scorecardsGrid"></div>
+</div>
+
+<!-- ENTRY -->
+<div class="page" id="page-entry">
+  <div class="section-head">
+    <div><div class="section-title">Daily Entry</div><div class="section-sub">Log each consultant's workrate metrics</div></div>
+  </div>
+  <div class="entry-layout">
+    <div class="sidebar">
+      <div class="sidebar-title">Date &amp; month</div>
+      <div style="margin-bottom:12px"><div class="field-lbl">Working date</div><input type="date" id="entryDate" onchange="loadEntryRows()"></div>
+      <div style="margin-bottom:16px"><div class="field-lbl">Month</div><select id="entryMonth" onchange="loadEntryRows()"></select></div>
+      <button class="btn btn-p btn-w" onclick="saveAllEntries()">Save all entries</button>
+      <div style="margin-top:8px"><button class="btn btn-s btn-w" onclick="clearDayEntries()">Clear this day</button></div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <div class="field-lbl" style="margin-bottom:8px">Day summary</div>
+        <div id="entrySummary" style="font-size:12px;color:var(--text3);font-family:var(--fm);line-height:1.8">Select a date.</div>
+      </div>
+    </div>
+    <div class="entry-table">
+      <div class="et-head">
+        <div class="th">Consultant</div><div class="th">Live % (0-100)</div>
+        <div class="th">Talk time (H:MM)</div><div class="th">Dials</div><div class="th">MTD / Status</div>
+      </div>
+      <div id="entryRows"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="page" id="page-leaderboard">
+  <div class="section-head">
+    <div><div class="section-title">Leaderboard</div><div class="section-sub" id="lb-sub"></div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="exportCSV('leaderboard')">&#8595; Export CSV</button>
+      <select id="lbMonth" onchange="renderLeaderboard()" style="width:160px"></select>
+    </div>
+  </div>
+  <div class="lb-grid" id="lbGrid"></div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-history">
+  <div class="section-head">
+    <div><div class="section-title">History</div><div class="section-sub">All logged daily entries</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="exportCSV('history')">&#8595; Export CSV</button>
+      <select id="histMonth" onchange="renderHistory()" style="width:160px"></select>
+      <select id="histPerson" onchange="renderHistory()" style="width:160px"></select>
+    </div>
+  </div>
+  <div class="hist-table">
+    <div class="hist-head"><div class="th">Date</div><div class="th">Consultant</div><div class="th">Live %</div><div class="th">Talk</div><div class="th">Dials</div><div class="th">Score</div><div class="th">Action</div></div>
+    <div id="histRows"></div>
+  </div>
+</div>
+
+<!-- DAY BY DAY -->
+<div class="page" id="page-daybyday">
+  <div class="section-head">
+    <div><div class="section-title">Day by Day</div><div class="section-sub">Daily grid per consultant</div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-s" onclick="exportCSV('dbd')">&#8595; Export CSV</button>
+      <select id="dbdMonth" onchange="renderDayByDay()" style="width:160px"></select>
+    </div>
+  </div>
+  <div class="sub-nav">
+    <button class="sub-tab active" onclick="switchDbdTab('overall')">Overall</button>
+    <button class="sub-tab" onclick="switchDbdTab('james')">Team James</button>
+    <button class="sub-tab" onclick="switchDbdTab('damo')">Team Damo</button>
+    <button class="sub-tab" onclick="switchDbdTab('g')">Team G</button>
+  </div>
+  <div id="dbdContent"></div>
+</div>
+
+<!-- HOLIDAY -->
+<div class="page" id="page-holiday">
+  <div class="section-head">
+    <div><div class="section-title">Holiday Planner</div><div class="section-sub">Click once = planned holiday. Click twice = sickness. Click again to clear.</div></div>
+    <button class="btn btn-s" onclick="exportCSV('holiday')">&#8595; Export CSV</button>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="field-lbl" style="margin-bottom:0;white-space:nowrap">Month:</div>
+      <select id="holMonth" onchange="renderHoliday()" style="width:160px"></select>
+    </div>
+    <button class="btn btn-s" onclick="clearAllHols()">Clear all holidays this month</button>
+  </div>
+  <div style="overflow-x:auto;border-radius:12px;border:1px solid var(--border)">
+    <table id="holTbl" style="border-collapse:collapse;font-family:var(--fm);font-size:11px;white-space:nowrap;width:100%"></table>
+  </div>
+  <div style="display:flex;gap:16px;font-size:11px;color:var(--text3);font-family:var(--fm);margin-top:12px;flex-wrap:wrap">
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:var(--red-bg);border:1px solid rgba(245,54,92,.4);display:inline-block"></span>Planned holiday</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:rgba(251,184,58,0.15);border:1px solid rgba(251,184,58,.4);display:inline-block"></span>Sickness/unplanned</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:3px;background:var(--surface3);border:1px solid var(--border);display:inline-block"></span>Weekend</span>
+  </div>
+</div>
+
+<!-- MANAGER VIEW -->
+<div class="page" id="page-manager">
+  <div class="section-head">
+    <div><div class="section-title">Manager View</div><div class="section-sub">Alerts, consistency, efficiency analysis</div></div>
+    <select id="mgrMonth" onchange="renderManager()" style="width:160px"></select>
+  </div>
+  <div id="managerContent"></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="section-head"><div><div class="section-title">Settings</div><div class="section-sub">Manage consultants and months</div></div></div>
+  <div class="settings-grid">
+    <div class="set-card">
+      <div class="set-title">Consultants</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--fm);margin-bottom:14px">Add or remove consultant names.</div>
+      <div id="personConfigRows"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <input type="text" id="newName" placeholder="Consultant name" style="flex:1">
+        <button class="btn btn-p" onclick="addPerson()" style="padding:8px 14px;font-size:13px;">+ Add</button>
+      </div>
+    </div>
+    <div class="set-card">
+      <div class="set-title">Month management</div>
+      <div style="margin-bottom:12px"><div class="field-lbl">Active month</div><select id="activeMonthSel" onchange="setActiveMonth()"></select></div>
+      <button class="btn btn-p btn-w" onclick="openNewMonthModal()">+ Create new month</button>
+    </div>
+    <div class="set-card">
+      <div class="set-title" style="color:var(--red)">Danger zone</div>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:14px;font-family:var(--fm);">Permanently erase all data.</p>
+      <button class="btn btn-d btn-w" onclick="clearAllData()">Clear all data</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="monthModal">
+  <div class="modal">
+    <div class="modal-title">Create new month</div>
+    <div class="modal-field"><div class="field-lbl">Month</div>
+      <select id="modalMonthSel">
+        <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+        <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+        <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+        <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+      </select>
+    </div>
+    <div class="modal-field"><div class="field-lbl">Year</div><input type="number" id="modalYear" value="2025" min="2020" max="2040"></div>
+    <div class="modal-btns">
+      <button class="btn btn-s" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="createNewMonth()">Create</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LIVE_TARGET=32,DIALS_TARGET=100,TALK_TARGET=180;
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+let APP={people:[],months:{},activeMonth:todayKey(),teams:{james:[],damo:[],g:[]},holidays:{},sickness:{}};
+function saveApp(){try{localStorage.setItem('workdash_v2',JSON.stringify(APP));}catch(e){}}
+function loadApp(){try{const r=localStorage.getItem('workdash_v2');if(r){const d=JSON.parse(r);APP={...APP,...d};APP.teams=APP.teams||{james:[],damo:[],g:[]};}}catch(e){}}
+function monthLabel(k){const[y,m]=k.split('-');return new Date(y,m-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});}
+function allMonthKeys(){const keys=Object.keys(APP.months);if(!keys.includes(APP.activeMonth))keys.push(APP.activeMonth);return[...new Set(keys)].sort().reverse();}
+function getEntries(mk){return(APP.months[mk]||{entries:[]}).entries||[];}
+function setEntries(mk,entries){if(!APP.months[mk])APP.months[mk]={entries:[]};APP.months[mk].entries=entries;saveApp();}
+function parseTalk(t){if(!t||t==='0:00'||t==='')return 0;const p=t.split(':');return parseInt(p[0]||0)*60+(parseInt(p[1]||0));}
+function fmtTalk(min){const h=Math.floor(min/60),m=Math.round(min%60);return h+':'+String(m).padStart(2,'0');}
+function scoreCol(v,t){return v>=t?'g':v>=(t*.75)?'a':'r';}
+function scoreHex(v,t){return v>=t?'#2dce89':v>=(t*.75)?'#fbb83a':'#f5365c';}
+function rankCls(i){return i===0?'gold':i===1?'silver':i===2?'bronze':'';}
+function rankLbl(i){return i===0?'1st':i===1?'2nd':i===2?'3rd':(i+1)+'th';}
+function teamOf(n){if(APP.teams.james.includes(n))return'Team James';if(APP.teams.damo.includes(n))return'Team Damo';if(APP.teams.g.includes(n))return'Team G';return'Unassigned';}
+function teamColorOf(n){if(APP.teams.james.includes(n))return'#5e9cf5';if(APP.teams.damo.includes(n))return'#2dce89';if(APP.teams.g.includes(n))return'#a78bfa';return'#8a8f9e';}
+function getHols(mk,name){return((APP.holidays[mk]||{})[name])||[];}
+function getSick(mk,name){return((APP.sickness[mk]||{})[name])||[];}
+
+function seedInitialData(){
+  if(APP.people.length>0)return;
+  APP.people=[{name:'Adam Day'},{name:'Adam Ridout'},{name:'Craig Roderick'},{name:'Deon Ndlovu'},{name:'Fadil Mohammed'},{name:'Faeeza Sheikh'},{name:'Joe Hughes'},{name:'Marcus Thomas'},{name:'Louis'}];
+  APP.teams={james:['Adam Day','Adam Ridout'],damo:['Craig Roderick','Deon Ndlovu','Fadil Mohammed'],g:['Faeeza Sheikh','Joe Hughes','Marcus Thomas']};
+  APP.activeMonth='2025-03';
+  const mk='2025-03';
+  const e=[
+    {date:'2025-03-02',name:'Adam Day',live:19,talk:'4:01',dials:59},{date:'2025-03-03',name:'Adam Day',live:92,talk:'3:55',dials:54},
+    {date:'2025-03-02',name:'Adam Ridout',live:25,talk:'3:34',dials:78},{date:'2025-03-03',name:'Adam Ridout',live:25,talk:'2:47',dials:60},
+    {date:'2025-03-04',name:'Adam Ridout',live:69,talk:'3:37',dials:63},{date:'2025-03-05',name:'Adam Ridout',live:36,talk:'2:03',dials:56},
+    {date:'2025-03-09',name:'Adam Ridout',live:20,talk:'3:56',dials:72},{date:'2025-03-10',name:'Adam Ridout',live:36,talk:'2:53',dials:56},
+    {date:'2025-03-11',name:'Adam Ridout',live:36,talk:'2:31',dials:53},{date:'2025-03-12',name:'Adam Ridout',live:54,talk:'3:23',dials:52},
+    {date:'2025-03-13',name:'Adam Ridout',live:41,talk:'4:11',dials:34},{date:'2025-03-16',name:'Adam Ridout',live:47,talk:'2:46',dials:58},
+    {date:'2025-03-17',name:'Adam Ridout',live:46,talk:'1:59',dials:31},{date:'2025-03-19',name:'Adam Ridout',live:31,talk:'2:59',dials:81},
+    {date:'2025-03-20',name:'Adam Ridout',live:41,talk:'2:46',dials:81},{date:'2025-03-23',name:'Adam Ridout',live:47,talk:'2:54',dials:58},
+    {date:'2025-03-24',name:'Adam Ridout',live:69,talk:'3:56',dials:104},{date:'2025-03-25',name:'Adam Ridout',live:64,talk:'3:33',dials:116},
+    {date:'2025-03-26',name:'Adam Ridout',live:64,talk:'2:43',dials:107},{date:'2025-03-27',name:'Adam Ridout',live:85,talk:'3:19',dials:85},
+    {date:'2025-03-02',name:'Craig Roderick',live:35,talk:'2:29',dials:57},{date:'2025-03-03',name:'Craig Roderick',live:33,talk:'2:29',dials:62},
+    {date:'2025-03-04',name:'Craig Roderick',live:36,talk:'2:10',dials:59},{date:'2025-03-05',name:'Craig Roderick',live:18,talk:'1:31',dials:63},
+    {date:'2025-03-09',name:'Craig Roderick',live:53,talk:'3:07',dials:86},{date:'2025-03-10',name:'Craig Roderick',live:64,talk:'2:24',dials:51},
+    {date:'2025-03-11',name:'Craig Roderick',live:23,talk:'1:54',dials:80},{date:'2025-03-12',name:'Craig Roderick',live:31,talk:'2:55',dials:64},
+    {date:'2025-03-13',name:'Craig Roderick',live:44,talk:'2:53',dials:51},{date:'2025-03-16',name:'Craig Roderick',live:69,talk:'3:11',dials:78},
+    {date:'2025-03-17',name:'Craig Roderick',live:50,talk:'2:45',dials:99},{date:'2025-03-18',name:'Craig Roderick',live:33,talk:'3:05',dials:105},
+    {date:'2025-03-19',name:'Craig Roderick',live:50,talk:'2:03',dials:75},{date:'2025-03-20',name:'Craig Roderick',live:33,talk:'2:43',dials:56},
+    {date:'2025-03-23',name:'Craig Roderick',live:47,talk:'2:46',dials:100},{date:'2025-03-24',name:'Craig Roderick',live:36,talk:'2:10',dials:106},
+    {date:'2025-03-25',name:'Craig Roderick',live:40,talk:'2:14',dials:101},{date:'2025-03-26',name:'Craig Roderick',live:42,talk:'1:50',dials:106},
+    {date:'2025-03-27',name:'Craig Roderick',live:38,talk:'2:19',dials:85},
+    {date:'2025-03-10',name:'Deon Ndlovu',live:14,talk:'1:01',dials:11},
+    {date:'2025-03-02',name:'Fadil Mohammed',live:31,talk:'4:03',dials:81},{date:'2025-03-03',name:'Fadil Mohammed',live:31,talk:'4:31',dials:73},
+    {date:'2025-03-04',name:'Fadil Mohammed',live:42,talk:'3:24',dials:56},{date:'2025-03-05',name:'Fadil Mohammed',live:50,talk:'3:37',dials:65},
+    {date:'2025-03-09',name:'Fadil Mohammed',live:36,talk:'4:29',dials:96},{date:'2025-03-10',name:'Fadil Mohammed',live:43,talk:'3:10',dials:66},
+    {date:'2025-03-11',name:'Fadil Mohammed',live:50,talk:'3:22',dials:67},{date:'2025-03-12',name:'Fadil Mohammed',live:31,talk:'3:53',dials:58},
+    {date:'2025-03-13',name:'Fadil Mohammed',live:22,talk:'4:16',dials:42},{date:'2025-03-16',name:'Fadil Mohammed',live:31,talk:'4:19',dials:77},
+    {date:'2025-03-17',name:'Fadil Mohammed',live:45,talk:'3:19',dials:93},{date:'2025-03-18',name:'Fadil Mohammed',live:55,talk:'3:42',dials:83},
+    {date:'2025-03-19',name:'Fadil Mohammed',live:38,talk:'3:07',dials:98},{date:'2025-03-20',name:'Fadil Mohammed',live:27,talk:'3:30',dials:91},
+    {date:'2025-03-23',name:'Fadil Mohammed',live:13,talk:'3:30',dials:82},{date:'2025-03-24',name:'Fadil Mohammed',live:42,talk:'3:56',dials:77},
+    {date:'2025-03-25',name:'Fadil Mohammed',live:78,talk:'3:58',dials:69},{date:'2025-03-26',name:'Fadil Mohammed',live:45,talk:'3:39',dials:86},
+    {date:'2025-03-27',name:'Fadil Mohammed',live:73,talk:'3:31',dials:74},
+    {date:'2025-03-02',name:'Faeeza Sheikh',live:50,talk:'3:18',dials:42},{date:'2025-03-03',name:'Faeeza Sheikh',live:50,talk:'2:08',dials:50},
+    {date:'2025-03-04',name:'Faeeza Sheikh',live:31,talk:'2:34',dials:45},{date:'2025-03-05',name:'Faeeza Sheikh',live:45,talk:'2:12',dials:41},
+    {date:'2025-03-09',name:'Faeeza Sheikh',live:43,talk:'3:46',dials:55},{date:'2025-03-10',name:'Faeeza Sheikh',live:54,talk:'2:34',dials:57},
+    {date:'2025-03-11',name:'Faeeza Sheikh',live:54,talk:'2:53',dials:47},{date:'2025-03-12',name:'Faeeza Sheikh',live:50,talk:'3:03',dials:46},
+    {date:'2025-03-13',name:'Faeeza Sheikh',live:24,talk:'2:38',dials:48},{date:'2025-03-16',name:'Faeeza Sheikh',live:33,talk:'2:51',dials:49},
+    {date:'2025-03-17',name:'Faeeza Sheikh',live:42,talk:'2:55',dials:70},{date:'2025-03-18',name:'Faeeza Sheikh',live:36,talk:'3:38',dials:74},
+    {date:'2025-03-19',name:'Faeeza Sheikh',live:36,talk:'3:02',dials:94},{date:'2025-03-23',name:'Faeeza Sheikh',live:38,talk:'3:44',dials:82},
+    {date:'2025-03-24',name:'Faeeza Sheikh',live:25,talk:'2:09',dials:113},{date:'2025-03-25',name:'Faeeza Sheikh',live:27,talk:'3:09',dials:87},
+    {date:'2025-03-26',name:'Faeeza Sheikh',live:45,talk:'3:52',dials:80},{date:'2025-03-27',name:'Faeeza Sheikh',live:33,talk:'3:46',dials:41},
+    {date:'2025-03-02',name:'Joe Hughes',live:50,talk:'3:47',dials:64},{date:'2025-03-03',name:'Joe Hughes',live:23,talk:'3:38',dials:56},
+    {date:'2025-03-04',name:'Joe Hughes',live:38,talk:'3:08',dials:74},{date:'2025-03-05',name:'Joe Hughes',live:18,talk:'2:44',dials:66},
+    {date:'2025-03-09',name:'Joe Hughes',live:27,talk:'4:17',dials:62},{date:'2025-03-10',name:'Joe Hughes',live:0,talk:'3:05',dials:72},
+    {date:'2025-03-11',name:'Joe Hughes',live:31,talk:'3:12',dials:64},{date:'2025-03-12',name:'Joe Hughes',live:46,talk:'4:08',dials:74},
+    {date:'2025-03-13',name:'Joe Hughes',live:41,talk:'4:11',dials:37},{date:'2025-03-16',name:'Joe Hughes',live:40,talk:'4:09',dials:50},
+    {date:'2025-03-17',name:'Joe Hughes',live:62,talk:'4:17',dials:60},{date:'2025-03-18',name:'Joe Hughes',live:42,talk:'4:06',dials:84},
+    {date:'2025-03-19',name:'Joe Hughes',live:45,talk:'2:54',dials:100},{date:'2025-03-20',name:'Joe Hughes',live:40,talk:'3:42',dials:68},
+    {date:'2025-03-23',name:'Joe Hughes',live:25,talk:'3:54',dials:56},{date:'2025-03-24',name:'Joe Hughes',live:17,talk:'3:16',dials:81},
+    {date:'2025-03-25',name:'Joe Hughes',live:45,talk:'3:59',dials:80},{date:'2025-03-26',name:'Joe Hughes',live:27,talk:'3:42',dials:78},
+    {date:'2025-03-27',name:'Joe Hughes',live:58,talk:'4:05',dials:32},
+    {date:'2025-03-02',name:'Marcus Thomas',live:29,talk:'3:23',dials:75},{date:'2025-03-03',name:'Marcus Thomas',live:31,talk:'2:36',dials:66},
+    {date:'2025-03-04',name:'Marcus Thomas',live:33,talk:'2:30',dials:68},{date:'2025-03-05',name:'Marcus Thomas',live:36,talk:'2:47',dials:83},
+    {date:'2025-03-10',name:'Marcus Thomas',live:47,talk:'4:12',dials:71},{date:'2025-03-11',name:'Marcus Thomas',live:43,talk:'2:39',dials:83},
+    {date:'2025-03-12',name:'Marcus Thomas',live:69,talk:'4:43',dials:72},{date:'2025-03-13',name:'Marcus Thomas',live:41,talk:'4:07',dials:71},
+    {date:'2025-03-16',name:'Marcus Thomas',live:59,talk:'4:01',dials:82},{date:'2025-03-17',name:'Marcus Thomas',live:58,talk:'4:00',dials:97},
+    {date:'2025-03-18',name:'Marcus Thomas',live:64,talk:'4:18',dials:110},{date:'2025-03-19',name:'Marcus Thomas',live:27,talk:'3:26',dials:133},
+    {date:'2025-03-20',name:'Marcus Thomas',live:57,talk:'4:47',dials:92},{date:'2025-03-23',name:'Marcus Thomas',live:47,talk:'3:43',dials:116},
+    {date:'2025-03-24',name:'Marcus Thomas',live:42,talk:'3:50',dials:129},{date:'2025-03-25',name:'Marcus Thomas',live:30,talk:'3:38',dials:152},
+    {date:'2025-03-26',name:'Marcus Thomas',live:58,talk:'4:09',dials:105},{date:'2025-03-27',name:'Marcus Thomas',live:62,talk:'3:16',dials:109},
+  ];
+  APP.holidays['2025-03']={'Adam Day':['2025-03-09','2025-03-10','2025-03-11','2025-03-12','2025-03-13'],'Deon Ndlovu':['2025-03-02','2025-03-03','2025-03-04','2025-03-05'],'Marcus Thomas':['2025-03-09'],'Faeeza Sheikh':['2025-03-20']};
+  setEntries(mk,e);saveApp();
+}
+
+function calcPersonStats(mk){
+  const entries=getEntries(mk);
+  return APP.people.map(p=>{
+    const mine=entries.filter(e=>e.name===p.name&&e.dials>0);
+    if(!mine.length)return{name:p.name,days:0,avgLive:0,totalDials:0,avgDials:0,avgTalk:0,totalTalk:0,score:0};
+    const avgLive=Math.round(mine.reduce((s,e)=>s+e.live,0)/mine.length);
+    const totalDials=mine.reduce((s,e)=>s+e.dials,0);
+    const avgDials=Math.round(totalDials/mine.length);
+    const totalTalk=mine.reduce((s,e)=>s+parseTalk(e.talk),0);
+    const avgTalk=Math.round(totalTalk/mine.length);
+    const ls=Math.min(100,Math.round(avgLive/LIVE_TARGET*100));
+    const ds=Math.min(100,Math.round(avgDials/DIALS_TARGET*100));
+    const ts=Math.min(100,Math.round(avgTalk/TALK_TARGET*100));
+    return{name:p.name,days:mine.length,avgLive,totalDials,avgDials,avgTalk,totalTalk,score:Math.round((ls+ds+ts)/3)};
+  });
+}
+function getDailyTotals(mk){
+  const entries=getEntries(mk);const byDate={};
+  entries.filter(e=>e.dials>0).forEach(e=>{
+    if(!byDate[e.date])byDate[e.date]={livePcts:[],totalDials:0,talkMins:0,count:0};
+    byDate[e.date].livePcts.push(e.live);byDate[e.date].totalDials+=e.dials;
+    byDate[e.date].talkMins+=parseTalk(e.talk);byDate[e.date].count++;
+  });
+  return Object.entries(byDate).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,v])=>({
+    date,avgLive:Math.round(v.livePcts.reduce((s,x)=>s+x,0)/v.livePcts.length),
+    totalDials:v.totalDials,avgTalk:Math.round(v.talkMins/v.count)
+  }));
+}
+function calcEntryScore(e){
+  const ls=Math.min(100,Math.round(e.live/LIVE_TARGET*100));
+  const ds=Math.min(100,Math.round(e.dials/DIALS_TARGET*100));
+  const ts=Math.min(100,Math.round(parseTalk(e.talk)/TALK_TARGET*100));
+  return Math.round((ls+ds+ts)/3);
+}
+
+const _charts={};
+function destroyChart(id){if(_charts[id]){_charts[id].destroy();delete _charts[id];}}
+const gridCol='rgba(255,255,255,0.05)',tickCol='#555a68';
+
+function renderDashCharts(mk){
+  const daily=getDailyTotals(mk);
+  const labels=daily.map(d=>d.date.slice(5).replace('-','/'));
+  const liveVals=daily.map(d=>d.avgLive);
+  const dialVals=daily.map(d=>d.totalDials);
+  destroyChart('cDailyLive');destroyChart('cDailyDials');destroyChart('cLiveBar');destroyChart('cDialsBar');
+  _charts.cDailyLive=new Chart(document.getElementById('cDailyLive'),{type:'bar',data:{labels,datasets:[
+    {data:liveVals,backgroundColor:liveVals.map(v=>v>=LIVE_TARGET?'#2dce89':'#5e9cf5'),borderRadius:3,barPercentage:.6},
+    {data:daily.map(()=>LIVE_TARGET),type:'line',borderColor:'rgba(245,54,92,.6)',borderWidth:1.5,pointRadius:0,borderDash:[4,3],fill:false,tension:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+'%'}}},
+    scales:{x:{ticks:{color:tickCol,font:{size:10},maxRotation:45,autoSkip:true},grid:{display:false}},y:{ticks:{color:tickCol,font:{size:10},callback:v=>v+'%'},grid:{color:gridCol},min:0,max:100}}}});
+  _charts.cDailyDials=new Chart(document.getElementById('cDailyDials'),{type:'bar',data:{labels,datasets:[
+    {data:dialVals,backgroundColor:'#a78bfa',borderRadius:3,barPercentage:.6}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' dials'}}},
+    scales:{x:{ticks:{color:tickCol,font:{size:10},maxRotation:45,autoSkip:true},grid:{display:false}},y:{ticks:{color:tickCol,font:{size:10}},grid:{color:gridCol}}}}});
+  const stats=calcPersonStats(mk).filter(s=>s.days>0);
+  const pNames=stats.map(s=>s.name);
+  const barH=Math.max(220,stats.length*38+80);
+  document.getElementById('wLiveBar').style.height=barH+'px';
+  document.getElementById('wDialsBar').style.height=barH+'px';
+  _charts.cLiveBar=new Chart(document.getElementById('cLiveBar'),{type:'bar',data:{labels:pNames,datasets:[
+    {data:stats.map(s=>s.avgLive),backgroundColor:stats.map(s=>s.avgLive>=LIVE_TARGET?'#2dce89':'#5e9cf5'),borderRadius:3,barPercentage:.4},
+    {data:stats.map(()=>LIVE_TARGET),backgroundColor:'rgba(255,255,255,.07)',borderRadius:3,barPercentage:.4}
+  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+'%'}}},
+    scales:{x:{ticks:{color:tickCol,font:{size:10},callback:v=>v+'%'},grid:{color:gridCol},min:0,max:100},y:{ticks:{color:tickCol,font:{size:11}},grid:{display:false}}}}});
+  _charts.cDialsBar=new Chart(document.getElementById('cDialsBar'),{type:'bar',data:{labels:pNames,datasets:[
+    {data:stats.map(s=>s.totalDials),backgroundColor:stats.map(s=>s.avgDials>=DIALS_TARGET?'#2dce89':'#a78bfa'),borderRadius:3,barPercentage:.4},
+    {data:stats.map(s=>s.days*DIALS_TARGET),backgroundColor:'rgba(255,255,255,.07)',borderRadius:3,barPercentage:.4}
+  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+' dials'}}},
+    scales:{x:{ticks:{color:tickCol,font:{size:10}},grid:{color:gridCol}},y:{ticks:{color:tickCol,font:{size:11}},grid:{display:false}}}}});
+}
+
+function renderDashboard(){
+  const mk=APP.activeMonth;const stats=calcPersonStats(mk);const active=stats.filter(s=>s.days>0);
+  const teamAvgLive=active.length?Math.round(active.reduce((s,p)=>s+p.avgLive,0)/active.length):0;
+  const teamAvgDials=active.length?Math.round(active.reduce((s,p)=>s+p.avgDials,0)/active.length):0;
+  const teamAvgTalk=active.length?Math.round(active.reduce((s,p)=>s+p.avgTalk,0)/active.length):0;
+  const topScore=active.length?Math.max(...active.map(s=>s.score)):0;
+  const topPerson=active.find(s=>s.score===topScore);
+  document.getElementById('dash-sub').textContent=monthLabel(mk)+' \u00b7 '+new Date().toLocaleDateString('en-GB');
+  document.getElementById('kpiRow').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">Team avg live %</div><div class="kpi-val ${scoreCol(teamAvgLive,LIVE_TARGET)}">${teamAvgLive}%</div><div class="kpi-sub">Target: ${LIVE_TARGET}%</div></div>
+    <div class="kpi-card"><div class="kpi-label">Team avg dials/day</div><div class="kpi-val ${scoreCol(teamAvgDials,DIALS_TARGET)}">${teamAvgDials}</div><div class="kpi-sub">Target: ${DIALS_TARGET}/day</div></div>
+    <div class="kpi-card"><div class="kpi-label">Team avg talk/day</div><div class="kpi-val ${scoreCol(teamAvgTalk,TALK_TARGET)}">${fmtTalk(teamAvgTalk)}</div><div class="kpi-sub">Target: 3:00</div></div>
+    <div class="kpi-card"><div class="kpi-label">Active consultants</div><div class="kpi-val b">${active.length}</div><div class="kpi-sub">of ${APP.people.length} total</div></div>
+    <div class="kpi-card"><div class="kpi-label">Top performer</div><div class="kpi-val g" style="font-size:18px;line-height:1.2">${topPerson?topPerson.name.split(' ')[0]:'&mdash;'}</div><div class="kpi-sub">${topScore}% overall score</div></div>`;
+  document.getElementById('cardsGrid').innerHTML=stats.map(s=>{
+    const col=s.score>=75?'ab':s.score>=50?'mx':'bb';
+    const lp=Math.min(100,Math.round(s.avgLive/LIVE_TARGET*100));
+    const dp=Math.min(100,Math.round(s.avgDials/DIALS_TARGET*100));
+    const tp=Math.min(100,Math.round(s.avgTalk/TALK_TARGET*100));
+    return`<div class="p-card ${s.days?col:''}">
+      <div class="p-name">${s.name}</div>
+      <div class="p-team" style="color:${teamColorOf(s.name)}">${teamOf(s.name)}</div>
+      <div class="p-score ${s.days?scoreCol(s.score,75):''}">${s.days?s.score+'%':'&mdash;'}</div>
+      <div class="p-sub">overall score &middot; ${s.days} days</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${s.days?s.score:0}%;background:${s.score>=75?'#2dce89':s.score>=50?'#fbb83a':'#f5365c'}"></div></div>
+      <hr class="pdiv">
+      <div class="p-row"><span class="p-lbl">AVG LIVE %</span><span class="p-val ${scoreCol(s.avgLive,LIVE_TARGET)}">${s.avgLive}%</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${lp}%;background:${scoreHex(s.avgLive,LIVE_TARGET)}"></div></div>
+      <div class="p-row"><span class="p-lbl">AVG DIALS/DAY</span><span class="p-val ${scoreCol(s.avgDials,DIALS_TARGET)}">${s.avgDials}</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${dp}%;background:${scoreHex(s.avgDials,DIALS_TARGET)}"></div></div>
+      <div class="p-row"><span class="p-lbl">AVG TALK/DAY</span><span class="p-val ${scoreCol(s.avgTalk,TALK_TARGET)}">${fmtTalk(s.avgTalk)}</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${tp}%;background:${scoreHex(s.avgTalk,TALK_TARGET)}"></div></div>
+      <div class="pills">
+        ${s.avgLive>=LIVE_TARGET?'<span class="pill pg">LIVE \u2713</span>':'<span class="pill pr">LIVE \u2717</span>'}
+        ${s.avgDials>=DIALS_TARGET?'<span class="pill pg">DIALS \u2713</span>':'<span class="pill pr">DIALS \u2717</span>'}
+        ${s.avgTalk>=TALK_TARGET?'<span class="pill pg">TALK \u2713</span>':'<span class="pill pa">TALK ~</span>'}
+      </div>
+    </div>`;
+  }).join('');
+  renderDashCharts(mk);
+}
+
+let _teamTab='james';
+function switchTeamTab(t){
+  _teamTab=t;
+  document.querySelectorAll('#page-teams .sub-tab').forEach((b,i)=>{
+    b.classList.toggle('active',i===['james','damo','g','assign'].indexOf(t));
+  });
+  renderTeamTabContent();
+}
+function renderTeamTabContent(){
+  const el=document.getElementById('teamTabContent');const mk=APP.activeMonth;
+  if(_teamTab==='assign'){
+    const tl={james:'Team James',damo:'Team Damo',g:'Team G'};
+    const tc={james:'#5e9cf5',damo:'#2dce89',g:'#a78bfa'};
+    el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">${['james','damo','g'].map(t=>`
+      <div class="set-card"><div class="set-title" style="color:${tc[t]}">${tl[t]}</div>
+      <div style="display:flex;flex-direction:column;gap:6px">${APP.people.map(p=>{
+        const chk=APP.teams[t].includes(p.name);
+        return`<label class="member-toggle ${chk?'selected':''}" id="mt-${t}-${p.name.replace(/\s/g,'_')}">
+          <input type="checkbox" ${chk?'checked':''} onchange="toggleMember('${t}','${p.name}',this.checked)">
+          <span style="font-size:13px;font-weight:600">${p.name}</span>
+        </label>`;
+      }).join('')}</div></div>`).join('')}</div>`;
+    return;
+  }
+  const members=APP.teams[_teamTab]||[];
+  const stats=calcPersonStats(mk).filter(s=>members.includes(s.name));
+  const active=stats.filter(s=>s.days>0);
+  const avgLive=active.length?Math.round(active.reduce((s,p)=>s+p.avgLive,0)/active.length):0;
+  const avgDials=active.length?Math.round(active.reduce((s,p)=>s+p.avgDials,0)/active.length):0;
+  const avgTalk=active.length?Math.round(active.reduce((s,p)=>s+p.avgTalk,0)/active.length):0;
+  el.innerHTML=`
+    <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi-card"><div class="kpi-label">Members</div><div class="kpi-val b">${members.length}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Avg live %</div><div class="kpi-val ${scoreCol(avgLive,LIVE_TARGET)}">${avgLive}%</div><div class="kpi-sub">Target ${LIVE_TARGET}%</div></div>
+      <div class="kpi-card"><div class="kpi-label">Avg dials/day</div><div class="kpi-val ${scoreCol(avgDials,DIALS_TARGET)}">${avgDials}</div><div class="kpi-sub">Target ${DIALS_TARGET}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Avg talk/day</div><div class="kpi-val ${scoreCol(avgTalk,TALK_TARGET)}">${fmtTalk(avgTalk)}</div><div class="kpi-sub">Target 3:00</div></div>
+    </div>
+    <table class="sum-table"><thead><tr>
+      <th class="sum-th" style="text-align:left">Consultant</th><th class="sum-th">Days</th>
+      <th class="sum-th">Avg live %</th><th class="sum-th">Avg dials/day</th>
+      <th class="sum-th">Total dials</th><th class="sum-th">Avg talk/day</th><th class="sum-th">Score</th>
+    </tr></thead><tbody>${stats.map(s=>`<tr class="sum-tr">
+      <td class="sum-td">${s.name}</td><td class="sum-td">${s.days}</td>
+      <td class="sum-td" style="color:${scoreHex(s.avgLive,LIVE_TARGET)}">${s.avgLive}%</td>
+      <td class="sum-td" style="color:${scoreHex(s.avgDials,DIALS_TARGET)}">${s.avgDials}</td>
+      <td class="sum-td">${s.totalDials.toLocaleString()}</td>
+      <td class="sum-td" style="color:${scoreHex(s.avgTalk,TALK_TARGET)}">${fmtTalk(s.avgTalk)}</td>
+      <td class="sum-td" style="color:${scoreHex(s.score,75)};font-weight:700">${s.score}%</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function toggleMember(team,name,checked){
+  Object.keys(APP.teams).forEach(t=>{APP.teams[t]=APP.teams[t].filter(n=>n!==name);});
+  if(checked)APP.teams[team].push(name);
+  saveApp();
+  ['james','damo','g'].forEach(t=>{
+    const el=document.getElementById('mt-'+t+'-'+name.replace(/\s/g,'_'));
+    if(el)el.classList.toggle('selected',APP.teams[t].includes(name));
+  });
+  showToast('Team assignment updated');
+}
+
+function renderScorecards(){
+  const mk=document.getElementById('scMonth')?.value||APP.activeMonth;
+  const stats=calcPersonStats(mk);
+  const grid=document.getElementById('scorecardsGrid');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px';
+  grid.innerHTML=stats.map(s=>{
+    const lp=Math.min(100,Math.round(s.avgLive/LIVE_TARGET*100));
+    const dp=Math.min(100,Math.round(s.avgDials/DIALS_TARGET*100));
+    const tp=Math.min(100,Math.round(s.avgTalk/TALK_TARGET*100));
+    const scol=s.score>=75?'#2dce89':s.score>=50?'#fbb83a':'#f5365c';
+    return`<div class="kpi-card" style="border-top:2px solid ${scol}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div><div style="font-size:14px;font-weight:700">${s.name}</div>
+          <div style="font-size:10px;color:${teamColorOf(s.name)};font-family:var(--fm);margin-top:2px">${teamOf(s.name)}</div>
+          <div style="font-size:10px;color:var(--text3);font-family:var(--fm)">${s.days} days logged</div></div>
+        <div style="text-align:right"><div style="font-size:24px;font-weight:700;font-family:var(--fm);color:${scol}">${s.days?s.score+'%':'&mdash;'}</div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">overall</div></div>
+      </div>
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--fm);margin-bottom:3px">
+          <span>LIVE %</span><span style="color:${scoreHex(s.avgLive,LIVE_TARGET)}">${s.avgLive}% / ${LIVE_TARGET}%</span></div>
+        <div class="bar-bg" style="margin:0"><div class="bar-fill" style="width:${lp}%;background:${scoreHex(s.avgLive,LIVE_TARGET)}"></div></div>
+      </div>
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--fm);margin-bottom:3px">
+          <span>DIALS/DAY</span><span style="color:${scoreHex(s.avgDials,DIALS_TARGET)}">${s.avgDials} / ${DIALS_TARGET}</span></div>
+        <div class="bar-bg" style="margin:0"><div class="bar-fill" style="width:${dp}%;background:${scoreHex(s.avgDials,DIALS_TARGET)}"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--fm);margin-bottom:3px">
+          <span>TALK/DAY</span><span style="color:${scoreHex(s.avgTalk,TALK_TARGET)}">${fmtTalk(s.avgTalk)} / 3:00</span></div>
+        <div class="bar-bg" style="margin:0"><div class="bar-fill" style="width:${tp}%;background:${scoreHex(s.avgTalk,TALK_TARGET)}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadEntryRows(){
+  const dateVal=document.getElementById('entryDate').value;
+  const mk=document.getElementById('entryMonth').value||APP.activeMonth;
+  const entries=getEntries(mk);
+  document.getElementById('entryRows').innerHTML=APP.people.map(p=>{
+    const ex=entries.find(e=>e.date===dateVal&&e.name===p.name);
+    const mine=entries.filter(e=>e.name===p.name&&e.dials>0);
+    const mtdLive=mine.length?Math.round(mine.reduce((s,e)=>s+e.live,0)/mine.length):0;
+    const mtdDials=mine.reduce((s,e)=>s+e.dials,0);
+    const hols=getHols(mk,p.name),sick=getSick(mk,p.name);
+    const isHol=hols.includes(dateVal),isSick=sick.includes(dateVal);
+    const k=p.name.replace(/\s/g,'_');
+    return`<div class="et-row">
+      <div class="et-name">${p.name}<br><span style="font-size:10px;color:${teamColorOf(p.name)};font-family:var(--fm)">${teamOf(p.name)}</span></div>
+      <div><input type="number" id="e-live-${k}" min="0" max="100" placeholder="e.g. 42" value="${ex?ex.live:''}" ${isHol||isSick?'disabled style="opacity:.4"':''}></div>
+      <div><input type="text" id="e-talk-${k}" placeholder="e.g. 3:45" value="${ex?ex.talk:''}" ${isHol||isSick?'disabled style="opacity:.4"':''}></div>
+      <div><input type="number" id="e-dials-${k}" min="0" placeholder="e.g. 87" value="${ex?ex.dials:''}" ${isHol||isSick?'disabled style="opacity:.4"':''}></div>
+      <div class="et-mtd">${isHol?'<span style="color:var(--red);font-weight:700">HOL</span>':isSick?'<span style="color:var(--amber);font-weight:700">SICK</span>':`MTD avg live: ${mtdLive}%<br>MTD dials: ${mtdDials}`}</div>
+    </div>`;
+  }).join('');
+  updateEntrySummary(dateVal,mk);
+}
+function updateEntrySummary(dateVal,mk){
+  const day=getEntries(mk).filter(e=>e.date===dateVal&&e.dials>0);
+  if(!day.length){document.getElementById('entrySummary').textContent='No entries for this date.';return;}
+  const avgL=Math.round(day.reduce((s,e)=>s+e.live,0)/day.length);
+  const totD=day.reduce((s,e)=>s+e.dials,0);
+  const avgT=Math.round(day.reduce((s,e)=>s+parseTalk(e.talk),0)/day.length);
+  document.getElementById('entrySummary').innerHTML=`Logged: <strong>${day.length}</strong><br>Avg live: <strong style="color:${scoreHex(avgL,LIVE_TARGET)}">${avgL}%</strong><br>Total dials: <strong>${totD}</strong><br>Avg talk: <strong>${fmtTalk(avgT)}</strong>`;
+}
+function saveAllEntries(){
+  const dateVal=document.getElementById('entryDate').value;
+  const mk=document.getElementById('entryMonth').value||APP.activeMonth;
+  if(!dateVal){showToast('Please select a date','err');return;}
+  let entries=getEntries(mk).filter(e=>e.date!==dateVal);
+  APP.people.forEach(p=>{
+    const k=p.name.replace(/\s/g,'_');
+    const live=parseInt(document.getElementById('e-live-'+k)?.value)||0;
+    const talk=document.getElementById('e-talk-'+k)?.value||'0:00';
+    const dials=parseInt(document.getElementById('e-dials-'+k)?.value)||0;
+    if(live||dials||parseTalk(talk))entries.push({date:dateVal,name:p.name,live,talk,dials});
+  });
+  setEntries(mk,entries);showToast('Entries saved for '+dateVal);updateEntrySummary(dateVal,mk);
+}
+function clearDayEntries(){
+  const dateVal=document.getElementById('entryDate').value;
+  const mk=document.getElementById('entryMonth').value||APP.activeMonth;
+  if(!dateVal){showToast('Select a date','err');return;}
+  if(!confirm('Clear all entries for '+dateVal+'?'))return;
+  setEntries(mk,getEntries(mk).filter(e=>e.date!==dateVal));
+  loadEntryRows();showToast('Cleared');
+}
+
+function renderLeaderboard(){
+  const mk=document.getElementById('lbMonth')?.value||APP.activeMonth;
+  document.getElementById('lb-sub').textContent=monthLabel(mk);
+  const stats=calcPersonStats(mk).filter(s=>s.days>0);
+  function lb(title,sub,sorted,valFn,maxVal){
+    return`<div class="lb-card"><div class="lb-title">${title}<span style="font-size:11px;color:var(--text3);font-weight:400;margin-left:8px;font-family:var(--fm)">${sub}</span></div>
+      ${sorted.map((s,i)=>`<div class="lb-row">
+        <div class="lb-rank ${rankCls(i)}">${rankLbl(i)}</div>
+        <div class="lb-name">${s.name}</div>
+        <div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${Math.min(100,Math.round(valFn(s)/maxVal*100))}%"></div></div>
+        <div class="lb-val">${valFn(s)}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+  const bySc=[...stats].sort((a,b)=>b.score-a.score);
+  const byL=[...stats].sort((a,b)=>b.avgLive-a.avgLive);
+  const byD=[...stats].sort((a,b)=>b.totalDials-a.totalDials);
+  const byT=[...stats].sort((a,b)=>b.avgTalk-a.avgTalk);
+  const maxD=Math.max(...byD.map(s=>s.totalDials),1);
+  const maxT=Math.max(...byT.map(s=>s.avgTalk),1);
+  document.getElementById('lbGrid').innerHTML=
+    lb('Overall Score','composite',bySc,s=>s.score+'%',100)+
+    lb('Live %','avg per day',byL,s=>s.avgLive+'%',100)+
+    lb('Total Dials','MTD',byD,s=>s.totalDials,maxD)+
+    lb('Talk Time','avg/day',byT,s=>fmtTalk(s.avgTalk),maxT);
+}
+
+function renderHistory(){
+  const mk=document.getElementById('histMonth')?.value||APP.activeMonth;
+  const person=document.getElementById('histPerson')?.value||'All';
+  let entries=getEntries(mk).filter(e=>e.dials>0).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  if(person!=='All')entries=entries.filter(e=>e.name===person);
+  document.getElementById('histRows').innerHTML=entries.length?entries.map(e=>{
+    const sc=calcEntryScore(e);
+    return`<div class="hist-row">
+      <div>${e.date.slice(5).replace('-','/')}</div>
+      <div style="font-weight:600">${e.name}</div>
+      <div style="color:${scoreHex(e.live,LIVE_TARGET)}">${e.live}%</div>
+      <div>${e.talk}</div><div>${e.dials}</div>
+      <div style="color:${scoreHex(sc,75)};font-weight:700">${sc}%</div>
+      <div><button class="del-btn" onclick="deleteEntry('${mk}','${e.date}','${e.name}')">&#10005;</button></div>
+    </div>`;
+  }).join(''):`<div class="empty"><div class="empty-icon">&#128203;</div>No entries logged yet.</div>`;
+}
+function deleteEntry(mk,date,name){
+  if(!confirm('Delete entry for '+name+' on '+date+'?'))return;
+  setEntries(mk,getEntries(mk).filter(e=>!(e.date===date&&e.name===name)));
+  renderHistory();showToast('Entry deleted');
+}
+
+let _dbdTab='overall';
+function switchDbdTab(t){
+  _dbdTab=t;
+  document.querySelectorAll('#page-daybyday .sub-tab').forEach((b,i)=>{
+    b.classList.toggle('active',i===['overall','james','damo','g'].indexOf(t));
+  });
+  renderDayByDay();
+}
+function renderDayByDay(){
+  const mk=document.getElementById('dbdMonth')?.value||APP.activeMonth;
+  const entries=getEntries(mk);
+  let people=APP.people.map(p=>p.name);
+  if(_dbdTab!=='overall')people=APP.teams[_dbdTab]||[];
+  const allDates=[...new Set(entries.map(e=>e.date))].sort();
+  const hdr=`<tr><th class="dbd-th name-col">Consultant</th>${allDates.map(d=>`<th class="dbd-th">${d.slice(5).replace('-','/')}</th>`).join('')}</tr>`;
+  const makeRows=(metric)=>people.map(name=>{
+    const hols=getHols(mk,name);
+    const cells=allDates.map(d=>{
+      if(hols.includes(d))return`<td class="dbd-td hol">HOL</td>`;
+      const e=entries.find(x=>x.date===d&&x.name===name);
+      if(!e||!e.dials)return`<td class="dbd-td" style="color:var(--text3)">&mdash;</td>`;
+      if(metric==='live')return`<td class="dbd-td" style="color:${scoreHex(e.live,LIVE_TARGET)}">${e.live}%</td>`;
+      if(metric==='dials')return`<td class="dbd-td" style="color:${scoreHex(e.dials,DIALS_TARGET)}">${e.dials}</td>`;
+      return`<td class="dbd-td">${e.talk}</td>`;
+    }).join('');
+    return`<tr><td class="dbd-td name-col">${name}</td>${cells}</tr>`;
+  }).join('');
+  document.getElementById('dbdContent').innerHTML=
+    `<div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;font-family:var(--fm);letter-spacing:.05em;text-transform:uppercase">Live %</div>
+    <div class="dbd-wrap"><table class="dbd-table"><thead>${hdr}</thead><tbody>${makeRows('live')}</tbody></table></div>
+    <div style="font-size:12px;font-weight:700;color:var(--text2);margin:16px 0 8px;font-family:var(--fm);letter-spacing:.05em;text-transform:uppercase">Dials</div>
+    <div class="dbd-wrap"><table class="dbd-table"><thead>${hdr}</thead><tbody>${makeRows('dials')}</tbody></table></div>
+    <div style="font-size:12px;font-weight:700;color:var(--text2);margin:16px 0 8px;font-family:var(--fm);letter-spacing:.05em;text-transform:uppercase">Talk time</div>
+    <div class="dbd-wrap"><table class="dbd-table"><thead>${hdr}</thead><tbody>${makeRows('talk')}</tbody></table></div>`;
+}
+
+function renderHoliday(){
+  const mk=document.getElementById('holMonth')?.value||APP.activeMonth;
+  const[y,m]=mk.split('-').map(Number);
+  const dim=new Date(y,m,0).getDate();
+  const people=APP.people;
+  if(!people.length){document.getElementById('holTbl').innerHTML='<tr><td style="padding:24px;color:var(--text3)">No consultants.</td></tr>';return;}
+  const dates=[];
+  for(let d=1;d<=dim;d++){const dt=new Date(y,m-1,d);const dow=dt.getDay();dates.push({d,ds:y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'),isWE:dow===0||dow===6,dl:['S','M','T','W','T','F','S'][dow]});}
+  let html='<thead><tr><th class="hol-th nc">Consultant</th>';
+  dates.forEach(({d,dl,isWE})=>{html+=`<th class="hol-th" style="${isWE?'color:var(--text3)':''}">${d}<br><span style="font-size:9px">${dl}</span></th>`;});
+  html+='<th class="hol-th">Off</th></tr></thead><tbody>';
+  people.forEach(p=>{
+    const hols=getHols(mk,p.name),sick=getSick(mk,p.name);
+    html+=`<tr><td class="hol-td nc">${p.name}</td>`;
+    dates.forEach(({ds,isWE})=>{
+      if(isWE){html+='<td class="hol-td we"><span style="color:var(--text3);font-size:10px">&mdash;</span></td>';}
+      else{const isH=hols.includes(ds),isS=sick.includes(ds);const cls=isH?'on-hol':isS?'on-sick':'';
+        html+=`<td class="hol-td"><div class="hol-cell ${cls}" data-mk="${mk}" data-name="${p.name}" data-ds="${ds}" onclick="holClick(this)">${isH?'H':isS?'S':''}</div></td>`;}
+    });
+    html+=`<td class="hol-td"><span style="color:var(--red);font-size:10px">H:${hols.length}</span> <span style="color:var(--amber);font-size:10px">S:${sick.length}</span></td></tr>`;
+  });
+  html+='</tbody>';document.getElementById('holTbl').innerHTML=html;
+}
+function holClick(el){
+  const{mk,name,ds}=el.dataset;
+  if(!APP.holidays[mk])APP.holidays[mk]={};if(!APP.sickness[mk])APP.sickness[mk]={};
+  const hols=getHols(mk,name),sick=getSick(mk,name);
+  const isH=hols.includes(ds),isS=sick.includes(ds);
+  if(!isH&&!isS){APP.holidays[mk][name]=[...hols,ds];el.className='hol-cell on-hol';el.textContent='H';}
+  else if(isH){APP.holidays[mk][name]=hols.filter(d=>d!==ds);APP.sickness[mk][name]=[...sick,ds];el.className='hol-cell on-sick';el.textContent='S';}
+  else{APP.sickness[mk][name]=sick.filter(d=>d!==ds);el.className='hol-cell';el.textContent='';}
+  saveApp();
+}
+function clearAllHols(){
+  const mk=document.getElementById('holMonth')?.value||APP.activeMonth;
+  if(!confirm('Clear all holidays for '+monthLabel(mk)+'?'))return;
+  delete APP.holidays[mk];delete APP.sickness[mk];saveApp();renderHoliday();
+}
+
+function renderManager(){
+  const mk=document.getElementById('mgrMonth')?.value||APP.activeMonth;
+  const stats=calcPersonStats(mk);const active=stats.filter(s=>s.days>0);
+  const below=active.filter(s=>s.avgLive<LIVE_TARGET||s.avgDials<DIALS_TARGET||s.avgTalk<TALK_TARGET);
+  const onTrack=active.filter(s=>s.avgLive>=LIVE_TARGET&&s.avgDials>=DIALS_TARGET&&s.avgTalk>=TALK_TARGET);
+  const entries=getEntries(mk);
+  const consistency=APP.people.map(p=>{
+    const mine=entries.filter(e=>e.name===p.name&&e.dials>0);if(mine.length<2)return null;
+    const vals=mine.map(e=>e.live);const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    const std=Math.round(Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/vals.length));
+    return{name:p.name,mean:Math.round(mean),std,days:mine.length};
+  }).filter(Boolean).sort((a,b)=>a.std-b.std);
+  const trends=APP.people.map(p=>{
+    const mine=entries.filter(e=>e.name===p.name&&e.dials>0).sort((a,b)=>a.date.localeCompare(b.date));
+    if(mine.length<4)return null;
+    const half=Math.floor(mine.length/2);
+    const first=Math.round(mine.slice(0,half).reduce((s,e)=>s+e.live,0)/half);
+    const second=Math.round(mine.slice(half).reduce((s,e)=>s+e.live,0)/(mine.length-half));
+    return{name:p.name,first,second,diff:second-first};
+  }).filter(Boolean).sort((a,b)=>b.diff-a.diff);
+  const el=document.getElementById('managerContent');
+  el.innerHTML=`
+    <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi-card"><div class="kpi-label">On track</div><div class="kpi-val g">${onTrack.length}</div><div class="kpi-sub">All 3 metrics met</div></div>
+      <div class="kpi-card"><div class="kpi-label">Needs attention</div><div class="kpi-val r">${below.length}</div><div class="kpi-sub">Missing 1+ targets</div></div>
+      <div class="kpi-card"><div class="kpi-label">Active</div><div class="kpi-val b">${active.length}</div><div class="kpi-sub">Logging data this month</div></div>
+      <div class="kpi-card"><div class="kpi-label">On holiday</div><div class="kpi-val a">${APP.people.filter(p=>getHols(mk,p.name).length>0).length}</div><div class="kpi-sub">Have holiday logged</div></div>
+    </div>
+    ${below.length?`<div class="chart-card" style="margin-bottom:24px">
+      <div class="chart-title" style="color:var(--red)">Below target &mdash; action required</div>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">${below.map(s=>{
+        const gaps=[];
+        if(s.avgLive<LIVE_TARGET)gaps.push('Live '+s.avgLive+'% (need '+LIVE_TARGET+'%)');
+        if(s.avgDials<DIALS_TARGET)gaps.push('Dials '+s.avgDials+'/day (need '+DIALS_TARGET+')');
+        if(s.avgTalk<TALK_TARGET)gaps.push('Talk '+fmtTalk(s.avgTalk)+'/day (need 3:00)');
+        return`<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:var(--red-bg);border:1px solid rgba(245,54,92,.15);border-radius:8px">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--red);margin-top:4px;flex-shrink:0"></span>
+          <div><strong style="font-size:13px">${s.name}</strong> <span style="font-size:11px;color:${teamColorOf(s.name)}">${teamOf(s.name)}</span><br>
+          <span style="font-size:11px;color:var(--text3);font-family:var(--fm)">${gaps.join(' &middot; ')}</span></div>
+        </div>`;
+      }).join('')}</div></div>`:`<div class="chart-card" style="margin-bottom:24px;border-color:rgba(45,206,137,.2)"><span style="color:var(--green);font-size:13px;font-weight:700">&#10003; All consultants are on track</span></div>`}
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Consistency rating</div><div class="chart-sub">lower std dev = more consistent</div>
+        <table class="sum-table" style="margin-top:4px"><thead><tr>
+          <th class="sum-th" style="text-align:left">Consultant</th><th class="sum-th">Days</th>
+          <th class="sum-th">Avg live %</th><th class="sum-th">&plusmn; Std dev</th><th class="sum-th">Rating</th>
+        </tr></thead><tbody>${consistency.map(c=>{
+          const r=c.std<=10?'Consistent':c.std<=20?'Variable':'Inconsistent';
+          const rc=c.std<=10?'#2dce89':c.std<=20?'#fbb83a':'#f5365c';
+          return`<tr class="sum-tr"><td class="sum-td">${c.name}</td><td class="sum-td">${c.days}</td>
+            <td class="sum-td" style="color:${scoreHex(c.mean,LIVE_TARGET)}">${c.mean}%</td>
+            <td class="sum-td">&plusmn;${c.std}%</td>
+            <td class="sum-td"><span style="color:${rc};font-weight:700;font-size:11px">${r}</span></td></tr>`;
+        }).join('')}</tbody></table>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Live % trend direction</div><div class="chart-sub">first half vs second half of month</div>
+        <table class="sum-table" style="margin-top:4px"><thead><tr>
+          <th class="sum-th" style="text-align:left">Consultant</th><th class="sum-th">First half</th><th class="sum-th">Second half</th><th class="sum-th">Change</th>
+        </tr></thead><tbody>${trends.map(t=>{
+          const arrow=t.diff>3?'&#8593;':t.diff<-3?'&#8595;':'&#8594;';
+          const tc=t.diff>3?'#2dce89':t.diff<-3?'#f5365c':'#fbb83a';
+          return`<tr class="sum-tr"><td class="sum-td">${t.name}</td>
+            <td class="sum-td">${t.first}%</td><td class="sum-td">${t.second}%</td>
+            <td class="sum-td" style="color:${tc};font-weight:700">${arrow} ${t.diff>0?'+':''}${t.diff}%</td></tr>`;
+        }).join('')}</tbody></table>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Efficiency scatter</div><div class="chart-sub">avg dials/day vs avg live % &mdash; dashed lines = targets</div>
+      <div style="position:relative;height:280px"><canvas id="scatterChart"></canvas></div>
+    </div>`;
+  setTimeout(()=>{
+    destroyChart('scatterChart');
+    const pts=active.map(s=>({x:s.avgDials,y:s.avgLive,label:s.name.split(' ')[0],col:teamColorOf(s.name)}));
+    _charts.scatterChart=new Chart(document.getElementById('scatterChart'),{type:'scatter',
+      data:{datasets:[{data:pts,backgroundColor:pts.map(p=>p.col+'bb'),pointRadius:9,pointHoverRadius:12}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>`${d.raw.label}: ${d.raw.x} dials/day \u00b7 ${d.raw.y}% live`}}},
+        scales:{
+          x:{title:{display:true,text:'Avg dials/day',color:tickCol,font:{size:11}},min:0,grid:{color:gridCol},border:{display:false},ticks:{color:tickCol,font:{size:10}}},
+          y:{title:{display:true,text:'Avg live %',color:tickCol,font:{size:11}},min:0,max:100,ticks:{callback:v=>v+'%',color:tickCol,font:{size:10}},grid:{color:gridCol},border:{display:false},
+            afterDraw(chart){const{ctx,scales:{x,y}}=chart;ctx.save();ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(245,54,92,.4)';ctx.lineWidth=1;
+              const ty=y.getPixelForValue(LIVE_TARGET),tx=x.getPixelForValue(DIALS_TARGET);
+              ctx.beginPath();ctx.moveTo(x.left,ty);ctx.lineTo(x.right,ty);ctx.stroke();
+              ctx.beginPath();ctx.moveTo(tx,y.top);ctx.lineTo(tx,y.bottom);ctx.stroke();ctx.restore();}}}}});
+  },80);
+}
+
+function renderSettings(){
+  document.getElementById('personConfigRows').innerHTML=APP.people.map((p,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+      <span style="flex:1;font-size:13px;font-weight:600">${p.name}</span>
+      <span style="font-size:11px;color:${teamColorOf(p.name)};font-family:var(--fm)">${teamOf(p.name)}</span>
+      <button class="icon-btn" onclick="removePerson(${i})" title="Remove">&#10005;</button>
+    </div>`).join('');
+  populateMonthSelects();
+  const ams=document.getElementById('activeMonthSel');
+  if(ams)ams.innerHTML=allMonthKeys().map(k=>`<option value="${k}" ${k===APP.activeMonth?'selected':''}>${monthLabel(k)}</option>`).join('');
+}
+function addPerson(){
+  const inp=document.getElementById('newName'),name=inp.value.trim();
+  if(!name||APP.people.find(p=>p.name===name)){showToast('Enter a unique name','err');return;}
+  APP.people.push({name});inp.value='';saveApp();renderSettings();showToast(name+' added');
+}
+function removePerson(i){
+  const name=APP.people[i].name;
+  if(!confirm('Remove '+name+'?'))return;
+  APP.people.splice(i,1);Object.keys(APP.teams).forEach(t=>{APP.teams[t]=APP.teams[t].filter(n=>n!==name);});
+  saveApp();renderSettings();showToast(name+' removed');
+}
+function setActiveMonth(){APP.activeMonth=document.getElementById('activeMonthSel').value;saveApp();populateMonthSelects();showToast('Active month updated');}
+function openNewMonthModal(){document.getElementById('monthModal').classList.add('open');}
+function closeModal(){document.getElementById('monthModal').classList.remove('open');}
+function createNewMonth(){
+  const m=document.getElementById('modalMonthSel').value,y=document.getElementById('modalYear').value;
+  const mk=y+'-'+m;
+  if(!APP.months[mk])APP.months[mk]={entries:[]};
+  APP.activeMonth=mk;saveApp();closeModal();populateMonthSelects();renderSettings();showToast('Month '+monthLabel(mk)+' created');
+}
+function clearAllData(){if(!confirm('Erase ALL data?'))return;localStorage.removeItem('workdash_v2');APP={people:[],months:{},activeMonth:todayKey(),teams:{james:[],damo:[],g:[]},holidays:{},sickness:{}};renderSettings();renderDashboard();showToast('All data cleared');}
+
+function populateMonthSelects(){
+  const keys=allMonthKeys();
+  const opts=keys.map(k=>`<option value="${k}" ${k===APP.activeMonth?'selected':''}>${monthLabel(k)}</option>`).join('');
+  ['globalMonthSel','scMonth','lbMonth','histMonth','dbdMonth','holMonth','mgrMonth','entryMonth'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.innerHTML=opts;
+  });
+  const hp=document.getElementById('histPerson');
+  if(hp)hp.innerHTML='<option value="All">All consultants</option>'+APP.people.map(p=>`<option>${p.name}</option>`).join('');
+}
+function setGlobalMonth(){APP.activeMonth=document.getElementById('globalMonthSel').value;saveApp();populateMonthSelects();refreshActivePage(document.querySelector('.page.active')?.id.replace('page-',''));}
+function refreshActivePage(page){
+  if(page==='dashboard')renderDashboard();
+  else if(page==='teams')renderTeamTabContent();
+  else if(page==='scorecards')renderScorecards();
+  else if(page==='leaderboard')renderLeaderboard();
+  else if(page==='history')renderHistory();
+  else if(page==='daybyday')renderDayByDay();
+  else if(page==='holiday')renderHoliday();
+  else if(page==='manager')renderManager();
+}
+function showPage(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelector('.nav-tab[onclick*="\''+p+'\'"]')?.classList.add('active');
+  if(p==='settings')renderSettings();
+  else if(p==='entry'){const d=new Date();document.getElementById('entryDate').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');loadEntryRows();}
+  else refreshActivePage(p);
+}
+function showToast(msg,type){
+  const t=document.getElementById('toast');t.textContent=msg;
+  t.style.background=type==='err'?'#f5365c':'#2dce89';t.style.color='#fff';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);
+}
+function exportCSV(view){
+  const mk=APP.activeMonth;
+  const rows=[['Consultant','Date','Live %','Talk Time','Dials','Score']];
+  getEntries(mk).forEach(e=>rows.push([e.name,e.date,e.live,e.talk,e.dials,calcEntryScore(e)]));
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='workdash_'+mk+'_'+view+'.csv';a.click();
+}
+
+document.getElementById('navDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+loadApp();seedInitialData();populateMonthSelects();renderDashboard();
+</script>
+</body>
+</html>
