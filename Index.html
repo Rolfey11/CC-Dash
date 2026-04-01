@@ -983,7 +983,7 @@ function createNewMonth(){
   if(!APP.months[mk])APP.months[mk]={entries:[]};
   APP.activeMonth=mk;saveApp();closeModal();populateMonthSelects();renderSettings();showToast('Month '+monthLabel(mk)+' created');
 }
-function clearAllData(){if(!confirm('Erase ALL data?'))return;localStorage.removeItem('workdash_v2');location.reload();}
+function clearAllData(){if(!confirm('Erase ALL data?'))return;localStorage.removeItem('workdash_v2');APP={people:[],months:{},activeMonth:todayKey(),teams:{james:[],damo:[],g:[]},holidays:{},sickness:{}};renderSettings();renderDashboard();showToast('All data cleared');}
 
 function populateMonthSelects(){
   const keys=allMonthKeys();
