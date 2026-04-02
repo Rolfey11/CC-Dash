@@ -955,7 +955,10 @@ function renderManager(){
 function renderSettings(){
   document.getElementById('personConfigRows').innerHTML=APP.people.map((p,i)=>`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
-      <span style="flex:1;font-size:13px;font-weight:600">${p.name}</span>
+      <input type="text" value="${p.name}" style="flex:1;font-size:13px;font-weight:600;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-family:var(--fh);outline:none;"
+        onchange="renamePerson(${i}, this.value)"
+        onfocus="this._old=this.value"
+        title="Edit name — press Tab or click away to save">
       <span style="font-size:11px;color:${teamColorOf(p.name)};font-family:var(--fm)">${teamOf(p.name)}</span>
       <button class="icon-btn" onclick="removePerson(${i})" title="Remove">&#10005;</button>
     </div>`).join('');
@@ -973,6 +976,43 @@ function removePerson(i){
   if(!confirm('Remove '+name+'?'))return;
   APP.people.splice(i,1);Object.keys(APP.teams).forEach(t=>{APP.teams[t]=APP.teams[t].filter(n=>n!==name);});
   saveApp();renderSettings();showToast(name+' removed');
+}
+function renamePerson(i, newName){
+  newName = newName.trim();
+  const oldName = APP.people[i].name;
+  if(!newName || newName === oldName) return;
+  if(APP.people.find((p,j)=>j!==i && p.name===newName)){
+    showToast('Name already exists','err');
+    renderSettings(); // reset input
+    return;
+  }
+  // Update person record
+  APP.people[i].name = newName;
+  // All monthly entries
+  Object.keys(APP.months||{}).forEach(mk=>{
+    (APP.months[mk].entries||[]).forEach(e=>{ if(e.name===oldName) e.name=newName; });
+  });
+  // Team assignments
+  Object.keys(APP.teams||{}).forEach(t=>{
+    APP.teams[t]=(APP.teams[t]||[]).map(n=>n===oldName?newName:n);
+  });
+  // Holidays
+  Object.keys(APP.holidays||{}).forEach(mk=>{
+    if(APP.holidays[mk][oldName]!==undefined){
+      APP.holidays[mk][newName]=APP.holidays[mk][oldName];
+      delete APP.holidays[mk][oldName];
+    }
+  });
+  // Sickness
+  Object.keys(APP.sickness||{}).forEach(mk=>{
+    if(APP.sickness[mk][oldName]!==undefined){
+      APP.sickness[mk][newName]=APP.sickness[mk][oldName];
+      delete APP.sickness[mk][oldName];
+    }
+  });
+  saveApp();
+  renderSettings();
+  showToast(oldName+' → '+newName);
 }
 function setActiveMonth(){APP.activeMonth=document.getElementById('activeMonthSel').value;saveApp();populateMonthSelects();showToast('Active month updated');}
 function openNewMonthModal(){document.getElementById('monthModal').classList.add('open');}
